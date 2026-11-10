@@ -1,0 +1,83 @@
+#!/bin/bash
+set -euo pipefail
+
+REQUEST_FILE="${SHUTDOWN_REQUEST_FILE:-/home/devon/ups/shutdown_request.json}"
+READY_FILE="${SHUTDOWN_READY_FILE:-/home/devon/ups/shutdown_ready.json}"
+REASON="${1:-manual}"
+TIMEOUT=45
+
+case "$REASON" in
+    manual|low_battery|network) ;;
+    *)
+        echo "Invalid shutdown reason: $REASON"
+        exit 1
+        ;;
+esac
+
+exec 9>/run/bargaz-shutdown.lock
+
+if ! flock -n 9; then
+    echo "A shutdown request is already running."
+    exit 0
+fi
+
+REQUEST_ID="$(cat /proc/sys/kernel/random/uuid)"
+
+rm -f "$READY_FILE"
+
+python3 - "$REQUEST_FILE" "$REQUEST_ID" "$REASON" <<'PY'
+import json
+import os
+import sys
+from datetime import datetime, timezone
+
+path, request_id, reason = sys.argv[1:]
+os.makedirs(os.path.dirname(path), exist_ok=True)
+
+request = {
+    "shutdown_pending": True,
+    "shutdown_reason": reason,
+    "shutdown_request_id": request_id,
+    "timestamp": datetime.now(timezone.utc).isoformat()
+}
+
+temporary = path + ".tmp"
+with open(temporary, "w", encoding="utf-8") as output:
+    json.dump(request, output, indent=2)
+
+os.chmod(temporary, 0o644)
+os.replace(temporary, path)
+PY
+
+echo "Shutdown requested: $REASON ($REQUEST_ID)"
+echo "Waiting up to $TIMEOUT seconds for application preparation."
+
+for ((elapsed = 0; elapsed < TIMEOUT; elapsed++)); do
+    if python3 - "$READY_FILE" "$REQUEST_ID" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as source:
+        value = json.load(source)
+
+    valid = (
+        value.get("ready") is True
+        and value.get("request_id") == sys.argv[2]
+    )
+except (OSError, ValueError, AttributeError):
+    valid = False
+
+sys.exit(0 if valid else 1)
+PY
+    then
+        echo "Application preparation acknowledged."
+        break
+    fi
+
+    sleep 1
+done
+
+echo "Requesting Linux shutdown."
+echo "Linux will stop services and finish filesystem shutdown."
+exec systemctl poweroff --no-block

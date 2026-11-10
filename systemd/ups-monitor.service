@@ -1,0 +1,15 @@
+[Unit]
+Description=Bargaz UPS HAT Monitor
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=-/home/devon/.env
+WorkingDirectory=/opt/bargaz-system/ups
+ExecStart=/usr/bin/python3 -u /opt/bargaz-system/ups/ups_monitor.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

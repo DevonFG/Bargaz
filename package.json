@@ -1,0 +1,26 @@
+{
+  "name": "bargaz",
+  "version": "26.0.1-error.1",
+  "description": "",
+  "main": "backup-databases.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DevonFG/Bargaz.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/DevonFG/Bargaz/issues"
+  },
+  "homepage": "https://github.com/DevonFG/Bargaz#readme",
+  "private": true,
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "dotenv": "^18.0.10"
+  }
+}

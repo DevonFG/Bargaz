@@ -1,0 +1,17 @@
+[Unit]
+Description=Bargaz Health and Diagnostics
+After=network.target
+
+[Service]
+Type=simple
+User=devon
+SupplementaryGroups=systemd-journal
+EnvironmentFile=-/home/devon/.env
+WorkingDirectory=/opt/bargaz-system/health
+ExecStart=/usr/bin/python3 -u /opt/bargaz-system/health/health_server.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

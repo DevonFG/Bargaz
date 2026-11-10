@@ -1,0 +1,10 @@
+[Unit]
+Description=Bargazbot daily database backup timer
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=bargazbot-db-backup@daily.service
+
+[Install]
+WantedBy=timers.target

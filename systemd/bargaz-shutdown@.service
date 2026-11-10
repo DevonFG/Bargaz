@@ -1,0 +1,8 @@
+[Unit]
+Description=Bargaz shutdown request (%i)
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/home/devon/.env
+ExecStart=/opt/bargaz-system/ups/ups-shutdown %i
+TimeoutStartSec=60

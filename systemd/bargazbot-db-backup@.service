@@ -1,0 +1,9 @@
+[Unit]
+Description=BargazBot SQLite database backup (%i)
+
+[Service]
+EnvironmentFile=-/home/devon/.env
+Type=oneshot
+User=devon
+WorkingDirectory=/home/devon/BargazBot
+ExecStart=/usr/bin/flock /home/devon/Bargaz/BargazBot/databases/.backup.lock /usr/bin/node /home/devon/Bargaz/backup-databases.js %i /home/devon/Bargaz/BargazBot/databases /home/devon/Bargaz/BargazBot/logs
