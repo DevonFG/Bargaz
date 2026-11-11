@@ -47,7 +47,7 @@ install -d -m 755 \
 
 install -o root -g root -m 644 \
     "$SOURCE_DIR/ups/INA219.py" \
-    "$SOURCE_DIR/ups/ups_monitor.py" \
+    "$SOURCE_DIR/ups/LICENSE" \
     "$SOURCE_DIR/ups/ups_monitor.py" \
     /opt/bargaz-system/ups/
 

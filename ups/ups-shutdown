@@ -80,4 +80,5 @@ done
 
 echo "Requesting Linux shutdown."
 echo "Linux will stop services and finish filesystem shutdown."
+rm -f -- "$REQUEST_FILE"
 exec systemctl poweroff --no-block

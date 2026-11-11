@@ -142,19 +142,8 @@ class HealthHandler(BaseHTTPRequestHandler):
         return
 
 if __name__ == "__main__":
-        threading.Thread(
-        target=update_diagnostics,
-        daemon=True
-    ).start()
+    threading.Thread(target=update_diagnostics, daemon=True).start()
 
-    server = HTTPServer(
-        (HOST, PORT),
-        HealthHandler
-    )
-
-    print(
-        f"BargazBot health server listening "
-        f"on {HOST}:{PORT}"
-    )
-
+    server = HTTPServer((HOST, PORT), HealthHandler)
+    print(f"Bargaz health server listening on {HOST}:{PORT}", flush=True)
     server.serve_forever()

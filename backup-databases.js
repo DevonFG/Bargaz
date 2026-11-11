@@ -55,8 +55,8 @@ function getTimestamp() {
 }
 
 async function backupDatabases() {
-    fs.mkdirSync(BACKUP_DIR, { recursive: true });
-    fs.mkdirSync(LOG_DIR, { recursive: true });
+    fs.mkdirSync(BACKUP_DIR, {recursive: true});
+    fs.mkdirSync(LOG_DIR, {recursive: true});
 
     if (!Object.hasOwn(retention, backupType)) {
         log(
@@ -69,7 +69,7 @@ async function backupDatabases() {
 
     const databaseFiles = fs
         .readdirSync(DATABASE_DIR)
-        .filter((file) => file.endsWith(".db"));
+        .filter(file => file.endsWith(".db"));
 
     if (databaseFiles.length === 0) {
         log(`INFO: No databases found. Skipping ${backupType} backup.`);
@@ -96,11 +96,19 @@ async function backupDatabases() {
             await db.backup(temporaryPath);
 
             const verification = new Database(temporaryPath, {
-                readonly: true,
                 fileMustExist: true,
             });
 
             try {
+                const journalMode = verification.pragma(
+                    "journal_mode = DELETE",
+                    {simple: true}
+                );
+
+                if (journalMode !== "delete") {
+                    throw new Error("Could not prepare a standalone backup.");
+                }
+
                 const integrity = verification.pragma("integrity_check");
                 const foreignKeys = verification.pragma("foreign_key_check");
 
@@ -138,9 +146,9 @@ async function backupDatabases() {
             );
 
             try {
-                fs.rmSync(temporaryPath, { force: true });
+                fs.rmSync(temporaryPath, {force: true});
             } catch {
-                // Nothing else to do if cleanup also fails.
+                // The backup failure has already been logged.
             }
 
             process.exitCode = 1;
@@ -158,16 +166,10 @@ function removeOldBackups(databaseName) {
 
     const backups = fs
         .readdirSync(BACKUP_DIR)
-        .filter(
-            (file) =>
-                file.startsWith(prefix) &&
-                file.endsWith(suffix)
-        )
-        .map((file) => ({
+        .filter(file => file.startsWith(prefix) && file.endsWith(suffix))
+        .map(file => ({
             file,
-            modified: fs.statSync(
-                path.join(BACKUP_DIR, file)
-            ).mtimeMs,
+            modified: fs.statSync(path.join(BACKUP_DIR, file)).mtimeMs,
         }))
         .sort((a, b) => b.modified - a.modified);
 
@@ -175,7 +177,6 @@ function removeOldBackups(databaseName) {
 
     for (const backup of oldBackups) {
         fs.rmSync(path.join(BACKUP_DIR, backup.file));
-
         log(`INFO: Removed old backup "${backup.file}".`);
     }
 }

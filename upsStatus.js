@@ -87,3 +87,27 @@ export async function hasInternetConnection() {
 
   return results.some(Boolean);
 }
+
+async function runCommand(command, args = []) {
+  try {
+    const {stdout} = await execFileAsync(command, args, {timeout: 2000});
+    return stdout.trim();
+  } catch {
+    return null;
+  }
+}
+
+function checkEndpoint(host) {
+  return new Promise(resolve => {
+    const request = https.get({
+      hostname: host,
+      path: "/",
+      signal: AbortSignal.timeout(NETWORK_TIMEOUT_MS)
+    }, response => {
+      response.resume();
+      resolve(true);
+    });
+
+    request.on("error", () => resolve(false));
+  });
+}

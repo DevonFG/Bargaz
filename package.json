@@ -1,6 +1,6 @@
 {
   "name": "bargaz",
-  "version": "26.0.1-error.1",
+  "version": "26.0.1",
   "description": "",
   "main": "backup-databases.js",
   "scripts": {
@@ -22,5 +22,8 @@
   "dependencies": {
     "better-sqlite3": "^12.11.1",
     "dotenv": "^18.0.10"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
   }
 }
