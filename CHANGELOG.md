@@ -19,6 +19,9 @@ specific platform to have new content. In cases like that, the untested feature 
 Additional Note: Error versions can have beta, dev, and release version
 before and afterwards due to the multi-use of the version type.
 
+## v26.1.1 - Nov 12
+- Edited LED Indicator code after restarting and testing
+
 ## v26.1.0 - Nov 12
 - Updated diagnostics.py
   - actually reads bargazbot.db instead of an empty :memory: database

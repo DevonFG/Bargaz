@@ -6,7 +6,14 @@ READY_FILE="${SHUTDOWN_READY_FILE:-/home/devon/ups/shutdown_ready.json}"
 REASON="${1:-manual}"
 TIMEOUT=45
 
-LEDS=(/sys/class/leds/led0 /sys/class/leds/led1)
+LEDS=()
+
+for candidate in /sys/class/leds/ACT /sys/class/leds/PWR \
+    /sys/class/leds/led0 /sys/class/leds/led1; do
+    if [[ -d "$candidate" ]]; then
+        LEDS+=("$candidate")
+    fi
+done
 
 set_leds() {
     local value="$1"
