@@ -6,6 +6,35 @@ READY_FILE="${SHUTDOWN_READY_FILE:-/home/devon/ups/shutdown_ready.json}"
 REASON="${1:-manual}"
 TIMEOUT=45
 
+LEDS=(/sys/class/leds/led0 /sys/class/leds/led1)
+
+set_leds() {
+    local value="$1"
+
+    for led in "${LEDS[@]}"; do
+        [[ -e "$led/brightness" ]] || continue
+        printf '%s\n' "$value" > "$led/brightness" 2>/dev/null || true
+    done
+}
+
+release_leds() {
+    for led in "${LEDS[@]}"; do
+        [[ -e "$led/trigger" ]] || continue
+        printf 'none\n' > "$led/trigger" 2>/dev/null || true
+    done
+}
+
+flash_leds() {
+    for _ in 1 2 3 4 5 6; do
+        set_leds 1
+        sleep 0.25
+        set_leds 0
+        sleep 0.25
+    done
+
+    set_leds 0
+}
+
 case "$REASON" in
     manual|low_battery|network) ;;
     *)
@@ -22,6 +51,29 @@ if ! flock -n 9; then
 fi
 
 REQUEST_ID="$(cat /proc/sys/kernel/random/uuid)"
+
+if [[ -f "$READY_FILE" ]] && python3 - "$READY_FILE" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as source:
+        value = json.load(source)
+    age = (
+        datetime.now(timezone.utc)
+        - datetime.fromisoformat(value["timestamp"])
+    ).total_seconds()
+    valid = value.get("ready") is True and 0 <= age <= 60
+except (OSError, ValueError, KeyError, AttributeError, TypeError):
+    valid = False
+
+sys.exit(0 if valid else 1)
+PY
+then
+    echo "Application was already prepared for shutdown."
+    TIMEOUT=0
+fi
 
 rm -f "$READY_FILE"
 
@@ -77,6 +129,9 @@ PY
 
     sleep 1
 done
+
+release_leds
+flash_leds
 
 echo "Requesting Linux shutdown."
 echo "Linux will stop services and finish filesystem shutdown."

@@ -71,7 +71,7 @@ export async function getNetworkStatus() {
 
   return {
     type: "wifi",
-    name: WIFI_NAMES[ssid] || (ssid ? `Other Wi-Fi (${ssid})` : "Unknown Wi-Fi"),
+    name: WIFI_NAMES[ssid] || (ssid ? "Other Wi-Fi" : "Unknown Wi-Fi"),
     ssid: ssid || null,
     bars,
     interface: wifi.name

@@ -40,6 +40,26 @@ if [[ ! -f "$SOURCE_DIR/ups/INA219.py" ]]; then
     exit 1
 fi
 
+MARKER_DIR="/var/lib/bargaz-system"
+MARKER="$MARKER_DIR/install.sha256"
+
+install -d -m 755 "$MARKER_DIR"
+
+mapfile -t SOURCE_FILES < <(
+    find "$SOURCE_DIR/ups" "$SOURCE_DIR/health" "$SOURCE_DIR/systemd" \
+        -maxdepth 1 -type f | sort
+)
+
+CHECKSUM="$(
+    sha256sum "${SOURCE_FILES[@]}" | sha256sum | cut -d' ' -f1
+)"
+
+if [[ "${1:-}" == "--if-changed" && -f "$MARKER" ]]; then
+    if [[ "$(cat "$MARKER")" == "$CHECKSUM" ]]; then
+        exit 0
+    fi
+fi
+
 install -d -m 755 \
     /opt/bargaz-system \
     /opt/bargaz-system/ups \
@@ -65,6 +85,8 @@ for unit in \
     ups-monitor.service \
     bargaz-shutdown@.service \
     bargazbot-db-backup@.service \
+    bargaz-install.service \
+    bargaz-install.timer \
     bargazbot-db-backup-hourly.timer \
     bargazbot-db-backup-daily.timer \
     bargazbot-db-backup-weekly.timer
@@ -106,6 +128,13 @@ install -o root -g root -m 440 \
     "$sudo_rule" /etc/sudoers.d/bargaz-network-shutdown
 
 systemctl daemon-reload
+
+printf '%s\n' "$CHECKSUM" > "$MARKER"
+
+systemctl restart health-server.service
+systemctl restart ups-monitor.service
+
+systemctl enable --now bargaz-install.timer
 
 echo "Bargaz system files installed."
 echo "Services and timers are ready for the Pi setup verification."

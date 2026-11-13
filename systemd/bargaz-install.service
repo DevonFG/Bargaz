@@ -1,0 +1,6 @@
+[Unit]
+Description=Bargaz system file installer
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/devon/Bargaz/install-system.sh --if-changed

@@ -7,6 +7,7 @@ import json
 import os
 import threading
 import time
+import traceback
 
 HOST = os.environ.get("HEALTH_HOST", "127.0.0.1")
 PORT = int(os.environ.get("HEALTH_PORT", "3001"))
@@ -63,19 +64,21 @@ def get_health():
 
         except (OSError, ValueError, AttributeError, KeyError, TypeError):
             result["status"] = "degraded"
-        try:
-            with open(SHUTDOWN_REQUEST_FILE, encoding="utf-8") as f:
-                request = json.load(f)
 
-            if request.get("shutdown_pending") is True:
-                result["shutdown_pending"] = True
-                result["shutdown_reason"] = request.get("shutdown_reason")
-                result["status"] = "shutting_down"
+    try:
+        with open(SHUTDOWN_REQUEST_FILE, encoding="utf-8") as f:
+            request = json.load(f)
 
-        except FileNotFoundError:
-            pass
-        except (OSError, ValueError, AttributeError):
-            result["status"] = "degraded"
+        if request.get("shutdown_pending") is True:
+            result["shutdown_pending"] = True
+            result["shutdown_reason"] = request.get("shutdown_reason")
+            result["status"] = "shutting_down"
+
+    except FileNotFoundError:
+        pass
+    except (OSError, ValueError, AttributeError):
+        result["status"] = "degraded"
+
     return result
 
 diagnostics_result = {
@@ -84,13 +87,17 @@ diagnostics_result = {
 }
 diagnostics_lock = threading.Lock()
 
+extra_results = {}
+extra_lock = threading.Lock()
+
 def update_diagnostics():
-    global diagnostics_result
+    global diagnostics_result, versions_result
 
     while True:
         try:
             result = get_diagnostics()
         except Exception:
+            traceback.print_exc()
             result = {
                 "status": "unavailable",
                 "timestamp": datetime.now(timezone.utc).isoformat()
@@ -98,6 +105,13 @@ def update_diagnostics():
 
         with diagnostics_lock:
             diagnostics_result = result
+
+        with extra_lock:
+            for name in ("versions", "backups", "network"):
+                value = result.get(name)
+
+                if value:
+                    extra_results[name] = dict(value, status="online")
 
         time.sleep(60)
 
@@ -108,7 +122,12 @@ def get_response(path):
     if path in ("/diagnostics", "/endpoints/diagnostics"):
         with diagnostics_lock:
             return dict(diagnostics_result)
-
+    for name in ("versions", "backups", "network"):
+        if path in (f"/{name}", f"/endpoints/{name}"):
+            with extra_lock:
+                return dict(
+                    extra_results.get(name, {"status": "starting"})
+                )
     return None
 
 class HealthHandler(BaseHTTPRequestHandler):

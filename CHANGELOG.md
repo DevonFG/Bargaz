@@ -19,6 +19,34 @@ specific platform to have new content. In cases like that, the untested feature 
 Additional Note: Error versions can have beta, dev, and release version
 before and afterwards due to the multi-use of the version type.
 
+## v26.1.0 - Nov 12
+- Updated diagnostics.py
+  - actually reads bargazbot.db instead of an empty :memory: database
+  - Kernel storage errors are pre-run instead of module-level set that never cleared (one old warning no longer pins the system as degraded forever)
+  - Database now reported in detail
+  - Filesystem read-only detection added from /proc/mounts
+  - New Install-sync check (compares diagnostics.py and health_server.py between the repo and /out)
+  - Backup reporting added
+  - Network reporting added
+  - new checks for backup_hourly/daily/weekly
+- Updated health_server.py
+  - Shutdown-request file is read even when ups_status.json is missing
+  - added /endpoints/versions, /endpoints/backups, /endpoints/network, /health, and /diagnostics
+  - Exceptions in the diagnostics loop now print a traceback instead of unavailable
+- Updated shutdownCoordinator.js
+  - Network shtudown now runs the app's shutdown handlers first, then requests the host shutdown. A failed sent message while offline is now bounded by a 30s timeout and will not block poweroff
+  - Removed multiple unused exports
+- ups-shutdown was updated so that if the app already wrote a readiness file in the last 60s, the host skips its 45s wait and powres off immidiately
+- Updated install-system.sh
+  - New --if-changed mode hashes everything it installs and exits when nothing changed
+  - Installs and enables bargaz-install.timer which runs every 2mins and restarts healther-server and ups-monitor when something changes
+- Updated systemd/
+  - bargazbot-db-backup@service WorkingDirectory corrected to /home/devon/Bargaz/BargazBot (daily/weekly backups didn't exist when checking, this fixes that)
+  - new bargaz-install.service and bargaz-install.timer
+- Unknown SSIDs are no longer printed in status output from upsStatus.js
+- Added new LED light indicator for ups shutdown process
+Note: I cannot test the network shutdown changes until the wifi actually disconnects.
+
 ## v26.0.1 - Nov 10
 - Confirmed all features working!
 
