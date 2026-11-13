@@ -78,6 +78,6 @@ Environment files, credentials, private keys, databases, logs, and generated UPS
 
 ## License
 
-A license for Bargaz, BargazBot, and BargazLive has not yet been selected. Once selected, it will be posted at https://bargaz.app/license
+A license for Bargaz, BargazBot, and BargazLive has not yet been selected. Once selected, it will be posted at https://bargaz.app/legal
 
 The included `ups/INA219.py` driver comes from **[Waveshare’s UPS-Power-Module repository](https://github.com/waveshare/UPS-Power-Module)** and is distributed under the MIT License. Its copyright and license notice are included in `ups/LICENSE`.
